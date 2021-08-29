@@ -1,33 +1,57 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import Card from '../UI/Card';
 import './IngredientForm.css';
 
-const IngredientForm = React.memo(props => {
-  const submitHandler = event => {
-    event.preventDefault();
-    // ...
-  };
+const IngredientForm = React.memo(({ addIngredient, ingredients }) => {
+	const [formData, formDataUpdate] = useState({
+		title: '',
+		amount: '',
+	});
+	const submitHandler = (event) => {
+		event.preventDefault();
+		addIngredient(formData);
+	};
 
-  return (
-    <section className="ingredient-form">
-      <Card>
-        <form onSubmit={submitHandler}>
-          <div className="form-control">
-            <label htmlFor="title">Name</label>
-            <input type="text" id="title" />
-          </div>
-          <div className="form-control">
-            <label htmlFor="amount">Amount</label>
-            <input type="number" id="amount" />
-          </div>
-          <div className="ingredient-form__actions">
-            <button type="submit">Add Ingredient</button>
-          </div>
-        </form>
-      </Card>
-    </section>
-  );
+	const onChange = (e) => {
+		const { id, value } = e.target;
+		formDataUpdate((prevState) => {
+			return {
+				...prevState,
+				[id]: value,
+			};
+		});
+	};
+
+	return (
+		<section className='ingredient-form'>
+			<Card>
+				<form onSubmit={submitHandler}>
+					<div className='form-control'>
+						<label htmlFor='title'>Name</label>
+						<input
+							type='text'
+							id='title'
+							onChange={(e) => onChange(e)}
+							value={formData.title}
+						/>
+					</div>
+					<div className='form-control'>
+						<label htmlFor='amount'>Amount</label>
+						<input
+							type='number'
+							id='amount'
+							onChange={(e) => onChange(e)}
+							value={formData.amount}
+						/>
+					</div>
+					<div className='ingredient-form__actions'>
+						<button type='submit'>Add Ingredient</button>
+					</div>
+				</form>
+			</Card>
+		</section>
+	);
 });
 
 export default IngredientForm;
