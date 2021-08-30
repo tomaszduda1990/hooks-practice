@@ -1,21 +1,24 @@
-import React from 'react';
+import React from "react";
 
-import './IngredientList.css';
+import "./IngredientList.css";
 
-const IngredientList = (props) => {
-	return (
-		<section className='ingredient-list'>
-			<h2>Loaded Ingredients</h2>
-			<ul>
-				{props.ingredients.map((ig) => (
-					<li key={ig.id} onClick={props.removeIngredient(ig.id)}>
-						<span>{ig.title}</span>
-						<span>{ig.amount}x</span>
-					</li>
-				))}
-			</ul>
-		</section>
-	);
+const IngredientList = ({ removeIngredient, ingredients }) => {
+  return (
+    <section className="ingredient-list">
+      <h2>Loaded Ingredients</h2>
+      <ul>
+        {ingredients.map((ig) => (
+          <li key={ig.id}>
+            <button type="button" onClick={() => removeIngredient(ig.id)}>
+              remove
+            </button>
+            <span>{ig.title}</span>
+            <span>{ig.amount}x</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 };
 
 export default IngredientList;
