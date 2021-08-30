@@ -1,50 +1,125 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useReducer, useCallback } from 'react';
 
 import IngredientForm from './IngredientForm';
 import IngredientList from './IngredientList';
 import Search from './Search';
+import ErrorModal from '../UI/ErrorModal';
+
+const ingredientReducer = (currentIngredients, action) => {
+	switch (action.type) {
+		case 'SET':
+			return action.ingredients;
+		case 'ADD':
+			return [...currentIngredients, action.ingredient];
+		case 'DELETE':
+			return currentIngredients.filter((ing) => ing.id !== action.id);
+		default:
+			throw new Error('Should not get there!');
+	}
+};
+
+const httpReducer = (curHttpState, action) => {
+	switch (action.type) {
+		case 'SEND':
+			return { loading: true, error: null };
+		case 'RESPONSE':
+			return { ...curHttpState, loading: false };
+		case 'ERROR':
+			return { loading: false, error: action.errorMessage };
+		case 'CLEAR':
+			return { ...curHttpState, error: null };
+		default:
+			throw new Error('Should not be reached!');
+	}
+};
 
 function Ingredients() {
-	const [ingredients, setIngredients] = useState([]);
-	useEffect(() => {
-		console.log('ingredients changed');
-	}, [ingredients]);
+	const [ingredientsState, dispatchIng] = useReducer(ingredientReducer, []);
+	const [httpState, dispatchHttp] = useReducer(httpReducer, {
+		loading: false,
+		error: null,
+	});
 	const addIngredient = async (ing) => {
-		const res = await fetch(
-			'https://dummy-project-a6a61-default-rtdb.europe-west1.firebasedatabase.app/ingredients.json',
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(ing),
+		try {
+			dispatchHttp({
+				type: 'SEND',
+			});
+			const res = await fetch(
+				'https://dummy-project-a6a61-default-rtdb.europe-west1.firebasedatabase.app/ingredients.json',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(ing),
+				}
+			);
+			const { status: responseStatus } = res;
+			if (responseStatus === 200 || responseStatus === 201) {
+				dispatchIng({
+					type: 'ADD',
+					ingredient: ing,
+				});
+				dispatchHttp({
+					type: 'RESPONSE',
+				});
 			}
-		);
-		const { status: responseStatus } = res;
-		const responseBody = await res.json();
-		if (responseStatus === 200 || responseStatus === 201)
-			setIngredients((prevState) => [
-				...prevState,
-				{ id: responseBody.name, ...ing },
-			]);
+		} catch (error) {
+			dispatchHttp({
+				type: 'ERROR',
+				errorMessage: error.message,
+			});
+		}
 	};
-	const removeIngredient = (id) => {
-		setIngredients((prevState) => prevState.filter((ing) => ing.id !== id));
+	const removeIngredient = async (id) => {
+		try {
+			dispatchHttp({
+				type: 'SEND',
+			});
+			const res = await fetch(
+				`https://dummy-project-a6a61-default-rtdb.europe-west1.firebasedatabase.app/ingredients/${id}.json`,
+				{
+					method: 'DELETE',
+				}
+			);
+			if (res.status === 200 || res.status === 201) {
+				dispatchIng({ type: 'DELETE', id });
+				dispatchHttp({ type: 'RESPONSE' });
+			}
+		} catch (error) {
+			dispatchHttp({
+				type: 'ERROR',
+				errorMessage: error.message,
+			});
+		}
 	};
 	const onLoadIngredientsHandler = useCallback((filteredIngridients) => {
-		setIngredients(filteredIngridients);
+		dispatchIng({ type: 'SET', ingredients: filteredIngridients });
 	}, []);
 	return (
 		<div className='App'>
-			<IngredientForm addIngredient={addIngredient} ingredients={ingredients} />
+			{httpState.error && (
+				<ErrorModal
+					onClose={() => {
+						dispatchHttp({ type: 'CLEAR' });
+					}}
+				>
+					<p>{httpState.error}</p>
+				</ErrorModal>
+			)}
+			<IngredientForm
+				addIngredient={addIngredient}
+				ingredients={ingredientsState}
+				loading={httpState.loading}
+			/>
 
 			<section>
 				<Search onLoadIngredients={onLoadIngredientsHandler} />
 				{/* Need to add list here! */}
-				{ingredients.length && (
+				{ingredientsState.length > 0 && (
 					<IngredientList
-						ingredients={ingredients}
-						removeIngredient={removeIngredient}
+						ingredients={ingredientsState}
+						removeIngredient={(id) => removeIngredient.bind(this, id)}
 					/>
 				)}
 			</section>

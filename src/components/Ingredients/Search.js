@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import Card from '../UI/Card';
 import './Search.css';
@@ -6,8 +6,9 @@ import './Search.css';
 const Search = React.memo((props) => {
 	const [enteredFilter, setEnteredFilter] = useState('');
 	const { onLoadIngredients } = props;
-	useEffect(() => {
-		const filterData = async () => {
+	const inputRef = useRef();
+	const filterData = async () => {
+		if (enteredFilter === inputRef.current.value) {
 			const queryParams = enteredFilter
 				? `?orderBy="title"&equalTo="${enteredFilter}"`
 				: '';
@@ -25,9 +26,14 @@ const Search = React.memo((props) => {
 				}
 				onLoadIngredients(loadedData);
 			}
+		}
+	};
+	useEffect(() => {
+		const timer = setTimeout(filterData, 500);
+		return () => {
+			clearTimeout(timer);
 		};
-		filterData();
-	}, [enteredFilter, onLoadIngredients]);
+	}, [enteredFilter, onLoadIngredients, inputRef]);
 
 	return (
 		<section className='search'>
@@ -35,6 +41,7 @@ const Search = React.memo((props) => {
 				<div className='search-input'>
 					<label>Filter by Title</label>
 					<input
+						ref={inputRef}
 						type='text'
 						value={enteredFilter}
 						onChange={(e) => setEnteredFilter(e.target.value)}
