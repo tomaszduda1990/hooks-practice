@@ -51,7 +51,7 @@ function Ingredients() {
         if (responseBody) {
           const loadedData = [];
           Object.keys(responseBody).forEach((key) =>
-            loadedData.push({ id: responseBody[key].id, ...responseBody[key] })
+            loadedData.push({ id: key, ...responseBody[key] })
           );
           dispatchIng({
             type: "SET",
